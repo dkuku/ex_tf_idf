@@ -11,8 +11,8 @@ defmodule TfIdf do
 
   def build_model(docs) do
     docs
-    |> generate_docs_tf()
-    |> generate_idf()
+    |> calculate_docs_tf()
+    |> calculate_idf()
   end
 
   def calculate_relevance(model, query) do
@@ -50,24 +50,31 @@ defmodule TfIdf do
     end)
   end
 
-  def generate_docs_tf(docs) do
-    Enum.map(docs, fn doc ->
-      words =
-        doc
-        |> String.downcase()
-        |> String.split(~r/[^a-zA-Z]/)
-
-      n = length(words)
-
-      tf =
-        words
-        |> Enum.frequencies()
-
-      {doc, %TfIdf.Doc{tf: tf, last_modified: DateTime.utc_now(), count: n}}
-    end)
+  defp calculate_docs_tf(docs) do
+    Enum.map(docs, &calculate_doc_tf/1)
   end
 
-  def generate_idf(docs) do
+  defp calculate_doc_tf({name, doc}) when is_binary(name) and is_binary(doc) do
+    {_, tf} = calculate_doc_tf(doc)
+    {name, tf}
+  end
+
+  defp calculate_doc_tf(doc) when is_binary(doc) do
+    words =
+      doc
+      |> String.downcase()
+      |> String.split(~r/[^a-zA-Z]/)
+
+    n = length(words)
+
+    tf =
+      words
+      |> Enum.frequencies()
+
+    {doc, %TfIdf.Doc{tf: tf, last_modified: DateTime.utc_now(), count: n}}
+  end
+
+  defp calculate_idf(docs) do
     n = length(docs)
 
     idf =
